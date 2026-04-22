@@ -1,1 +1,1 @@
-export class CreateCommonDto {}
+export class CreateCommonDto { }
