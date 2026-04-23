@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { Repository } from 'typeorm';
 import { UsersEntity } from './entities/users.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreateUserDto } from './dto/create-user.dto';
+import { RegisterUserDto } from '../auth/dto/register.user.dto';
 
 @Injectable()
 export class UsersService {
@@ -18,33 +18,40 @@ export class UsersService {
     // auth에서 사용할 email 찾는 함수
     async getByEmail(email: string) {
         const user = await this.usersRepo.findOne({
-            where: { email }
+            where: {
+                email
+            },
+            select: {
+                password: true,
+                nickname: true,
+                email: true,
+            }
         });
 
         if (!user) {
             throw new NotFoundException('해당 하는 이메일 사용자를 찾지 못했습니다.');
         }
+
+        return user;
     }
 
-    async createUser(dto: CreateUserDto) {
-        const { email, nickname } = dto
-
-        const existsEmail = await this.usersRepo.exists({ where: { email } });
+    async createUser(user: Pick<UsersEntity, 'email' | 'password' | 'nickname'>) {
+        const existsEmail = await this.usersRepo.exists({ where: { email: user.email } });
 
         if (existsEmail) {
             throw new BadRequestException('이미 사용중인 이메일 입니다.');
         };
 
-        const existsNickanme = await this.usersRepo.exists({ where: { nickname } });
+        const existsNickanme = await this.usersRepo.exists({ where: { nickname: user.nickname } });
 
         if (existsNickanme) {
             throw new BadRequestException('이미 사용중인 닉네임 입니다.');
         }
 
         const userObject = this.usersRepo.create({
-            email: dto.email,
-            nickname: dto.nickname,
-            password: dto.password,
+            email: user.email,
+            nickname: user.nickname,
+            password: user.password,
         });
 
         const newUser = await this.usersRepo.save(userObject);
@@ -52,3 +59,4 @@ export class UsersService {
         return newUser;
     }
 }
+
