@@ -1,18 +1,4 @@
-### [NestJS] server
+### project 구현 연습 
+<!-- 및 포트폴리오 작성 -->
 
-# module,
-1. users,
-2. posts,
-3. auth,
-4. common,
-
-# entity
-- usersEntity,
-- postsEntity,
-- BaseEntity,
-
-# Tech Stack
-- TypeORM,
-- PassPort,
-- validator,
-- 
+## 해당 프롲게트의 의미?
