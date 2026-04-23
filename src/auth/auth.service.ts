@@ -56,7 +56,7 @@ export class AuthService {
             throw new BadRequestException('아이디 또는 비밀번호가 틀렸습니다.');
         };
 
-        const authenticatePasswword = bcrypt.compare(user.password, authenticateEmail.password)
+        const authenticatePasswword = await bcrypt.compare(user.password, authenticateEmail.password)
 
         if (!authenticatePasswword) {
             throw new BadRequestException('아이디 또는 비밀번호가 틀렸습니다.');

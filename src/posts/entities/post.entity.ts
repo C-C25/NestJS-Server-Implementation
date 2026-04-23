@@ -7,7 +7,7 @@ export class PostsEntity extends BaseEntity {
     @ManyToOne(() => UsersEntity, (user) => user.posts, {
         nullable: false,
     })
-    auhtor!: UsersEntity;
+    author!: UsersEntity;
 
     @Column({ type: 'varchar' })
     title!: string;

@@ -17,23 +17,18 @@ export class UsersService {
 
     // auth에서 사용할 email 찾는 함수
     async getByEmail(email: string) {
-        const user = await this.usersRepo.findOne({
+        return await this.usersRepo.findOne({
             where: {
                 email
             },
             select: {
+                id: true,
                 password: true,
                 nickname: true,
                 email: true,
             }
         });
-
-        if (!user) {
-            throw new NotFoundException('해당 하는 이메일 사용자를 찾지 못했습니다.');
-        }
-
-        return user;
-    }
+    };
 
     async createUser(user: Pick<UsersEntity, 'email' | 'password' | 'nickname'>) {
         const existsEmail = await this.usersRepo.exists({ where: { email: user.email } });

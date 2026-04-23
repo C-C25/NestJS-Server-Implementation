@@ -8,15 +8,15 @@ export class UsersEntity extends BaseEntity {
     @Column({ unique: true, nullable: false })
     email!: string;
 
-    @Column({ select: false })
     @Exclude({
-        toPlainOnly: true,
+        toPlainOnly: true
     })
+    @Column({ select: false })
     password!: string;
 
     @Column({ unique: true, nullable: false })
     nickname!: string;
 
-    @OneToMany(() => PostsEntity, (post) => post.auhtor)
+    @OneToMany(() => PostsEntity, (post) => post.author)
     posts!: PostsEntity[];
 }
