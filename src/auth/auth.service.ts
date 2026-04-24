@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -16,7 +16,7 @@ export class AuthService {
         private readonly jwtService: JwtService,
     ) { }
 
-    accessVerfiyToken(tokenType: 'access') {
+    accessVerifyToken(tokenType: string) {
         try {
             return this.jwtService.verify(tokenType, {
                 secret: this.configService.get<string>(ENV_JWT_ACCESS_SECRET_KEY),
@@ -26,7 +26,7 @@ export class AuthService {
         };
     };
 
-    refreshVerfiyToken(tokenType: 'refresh') {
+    refreshVerifyToken(tokenType: string) {
         try {
             return this.jwtService.verify(tokenType, {
                 secret: this.configService.get<string>(ENV_JWT_REFRESH_SECRET_KEY),
@@ -36,26 +36,23 @@ export class AuthService {
         };
     };
 
-    reissuanceOfAccessToken(tokenType: 'access') {
-        const decoded = this.accessVerfiyToken(tokenType);
-
-        return this.accessSing({
-            ...decoded,
-        }, tokenType)
-    };
-
     /**
      * refresh 로 refresh 로 발급 가능 경우
      */
-    // reissuanceOfRefreshToken(tokenType: 'refresh') {
-    //     const decoded = this.refreshVerfiyToken(tokenType);
+    reissuanceOfRefreshToken(refreshToken: string) {
+        const decoded = this.refreshVerifyToken(refreshToken);
 
-    //     return this.refreshSign({
-    //         ...decoded,
-    //     }, tokenType)
-    // }
+        if (decoded.tokenType !== 'refresh') {
+            throw new UnauthorizedException('토큰 재발급은 refresh 토큰으로만 가능합니다.')
+        }
 
-    private accessSing(user: Pick<UsersEntity, 'email' | 'id'>, tokenType: 'access') {
+        return this.accessSign({
+            id: decoded.sub,
+            email: decoded.email
+        }, 'access')
+    }
+
+    private accessSign(user: Pick<UsersEntity, 'email' | 'id'>, tokenType: 'access') {
         const accessPayload = {
             sub: user.id,
             email: user.email,
@@ -63,7 +60,7 @@ export class AuthService {
         };
 
         return this.jwtService.sign(accessPayload, {
-            secret: process.env[ENV_JWT_ACCESS_SECRET_KEY],
+            secret: this.configService.get<string>(ENV_JWT_ACCESS_SECRET_KEY),
             expiresIn: '5h',
         });
     };
@@ -76,14 +73,14 @@ export class AuthService {
         };
 
         return this.jwtService.sign(refreshPayload, {
-            secret: process.env[ENV_JWT_REFRESH_SECRET_KEY],
+            secret: this.configService.get<string>(ENV_JWT_REFRESH_SECRET_KEY),
             expiresIn: '7d'
         });
     };
 
     issuanceToken(user: Pick<UsersEntity, 'email' | 'id'>) {
         return {
-            accessToken: this.accessSing(user, 'access'),
+            accessToken: this.accessSign(user, 'access'),
             refreshToken: this.refreshSign(user, 'refresh'),
         };
     };
@@ -92,13 +89,13 @@ export class AuthService {
         const authenticateEmail = await this.usersService.getByEmail(user.email)
 
         if (!authenticateEmail) {
-            throw new BadRequestException('아이디 또는 비밀번호가 틀렸습니다.');
+            throw new UnauthorizedException('아이디 또는 비밀번호가 틀렸습니다.');
         };
 
-        const authenticatePasswword = await bcrypt.compare(user.password, authenticateEmail.password)
+        const authenticatePassword = await bcrypt.compare(user.password, authenticateEmail.password)
 
-        if (!authenticatePasswword) {
-            throw new BadRequestException('아이디 또는 비밀번호가 틀렸습니다.');
+        if (!authenticatePassword) {
+            throw new UnauthorizedException('아이디 또는 비밀번호가 틀렸습니다.');
         };
 
         return authenticateEmail;
