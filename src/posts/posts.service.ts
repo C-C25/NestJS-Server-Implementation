@@ -26,22 +26,26 @@ export class PostsService {
     return post;
   }
 
-  async createPost(dto: CreatePostDto) {
-    const post = this.postsRepo.create({
-      ...dto,
-      likeCount: 0,
-      commentCount: 0,
-    });
+  // auth 적용 예정
+  // async createPost(authorId: number, dto: CreatePostDto) {
+  //   const post = this.postsRepo.create({
+  //     author: {
+  //       id: authorId,
+  //     },
+  //     ...dto,
+  //     likeCount: 0,
+  //     commentCount: 0,
+  //   });
 
-    const newPost = await this.postsRepo.save(post);
+  //   const newPost = await this.postsRepo.save(post);
 
-    return newPost;
-  };
+  //   return newPost;
+  // };
 
-  async updatePost(authorId: number, dto: UpdatePostDto) {
+  async updatePost(postId: number, dto: UpdatePostDto) {
     const post = await this.postsRepo.findOne({
       where: {
-        id: authorId,
+        id: postId,
       },
     });
 
@@ -61,10 +65,10 @@ export class PostsService {
   }
 
   // 작성자가 삭제 할수 있는 정책이라면
-  async removePost(authorId: number) {
+  async removePost(postId: number) {
     const post = await this.postsRepo.findOne({
       where: {
-        id: authorId,
+        id: postId,
       }
     });
 
@@ -74,6 +78,6 @@ export class PostsService {
 
     await this.postsRepo.delete(post);
 
-    return authorId;
+    return postId;
   }
 }

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -15,6 +15,45 @@ export class AuthService {
         private readonly configService: ConfigService,
         private readonly jwtService: JwtService,
     ) { }
+
+    accessVerfiyToken(tokenType: 'access') {
+        try {
+            return this.jwtService.verify(tokenType, {
+                secret: this.configService.get<string>(ENV_JWT_ACCESS_SECRET_KEY),
+            });
+        } catch (e) {
+            throw new UnauthorizedException('access token이 만료 되었습니다.');
+        };
+    };
+
+    refreshVerfiyToken(tokenType: 'refresh') {
+        try {
+            return this.jwtService.verify(tokenType, {
+                secret: this.configService.get<string>(ENV_JWT_REFRESH_SECRET_KEY),
+            })
+        } catch (e) {
+            throw new UnauthorizedException('refresh token이 만료 되었습니다.');
+        };
+    };
+
+    reissuanceOfAccessToken(tokenType: 'access') {
+        const decoded = this.accessVerfiyToken(tokenType);
+
+        return this.accessSing({
+            ...decoded,
+        }, tokenType)
+    };
+
+    /**
+     * refresh 로 refresh 로 발급 가능 경우
+     */
+    // reissuanceOfRefreshToken(tokenType: 'refresh') {
+    //     const decoded = this.refreshVerfiyToken(tokenType);
+
+    //     return this.refreshSign({
+    //         ...decoded,
+    //     }, tokenType)
+    // }
 
     private accessSing(user: Pick<UsersEntity, 'email' | 'id'>, tokenType: 'access') {
         const accessPayload = {
@@ -49,7 +88,7 @@ export class AuthService {
         };
     };
 
-    async authenticateWithEmailAndPasswod(user: Pick<UsersEntity, 'email' | 'password'>) {
+    async authenticateWithEmailAndPassword(user: Pick<UsersEntity, 'email' | 'password'>) {
         const authenticateEmail = await this.usersService.getByEmail(user.email)
 
         if (!authenticateEmail) {
@@ -66,22 +105,23 @@ export class AuthService {
     };
 
     async loginUser(dto: LoginUserDto) {
-        const user = await this.authenticateWithEmailAndPasswod(dto);
+        const user = await this.authenticateWithEmailAndPassword(dto);
 
         return this.issuanceToken(user);
     };
 
-    async registerUser(user: Pick<UsersEntity, 'email' | 'password' | 'nickname'>) {
+    // 회원 가입 
+    async registerUser(dto: RegisterUserDto) {
         const hash = await bcrypt.hash(
-            user.password,
+            dto.password,
             parseInt(this.configService.get<string>(ENV_HASH_ROUND_KEY)!),
         );
 
-        const newUser = this.usersService.createUser({
-            ...user,
+        const newUser = await this.usersService.createUser({
+            ...dto,
             password: hash,
         });
 
         return newUser;
     };
-}
+};

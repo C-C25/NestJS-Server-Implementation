@@ -30,23 +30,23 @@ export class UsersService {
         });
     };
 
-    async createUser(user: Pick<UsersEntity, 'email' | 'password' | 'nickname'>) {
-        const existsEmail = await this.usersRepo.exists({ where: { email: user.email } });
+    async createUser(dto: RegisterUserDto) {
+        const existsEmail = await this.usersRepo.exists({ where: { email: dto.email } });
 
         if (existsEmail) {
             throw new BadRequestException('이미 사용중인 이메일 입니다.');
         };
 
-        const existsNickanme = await this.usersRepo.exists({ where: { nickname: user.nickname } });
+        const existsNickanme = await this.usersRepo.exists({ where: { nickname: dto.nickname } });
 
         if (existsNickanme) {
             throw new BadRequestException('이미 사용중인 닉네임 입니다.');
         }
 
         const userObject = this.usersRepo.create({
-            email: user.email,
-            nickname: user.nickname,
-            password: user.password,
+            email: dto.email,
+            nickname: dto.nickname,
+            password: dto.password,
         });
 
         const newUser = await this.usersRepo.save(userObject);
